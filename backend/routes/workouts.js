@@ -7,9 +7,10 @@ import {
     deleteWorkout,
     updateWorkout
 } from "../controllers/workoutController.js"
+import { requireAuth } from "../middleware/requireAuth.js"
 const router = express.Router()
 router.use(bodyParser.json())
-
+router.use(requireAuth)
 router.get('/',getWorkouts)
 router.get('/:id',getWorkout)
 

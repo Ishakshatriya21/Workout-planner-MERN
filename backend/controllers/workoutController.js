@@ -1,8 +1,11 @@
 import Workout from "../models/WorkoutModel.js"
 import mongoose from "mongoose"
+import { requireAuth } from '../middleware/requireAuth.js'
 //get all workouts
 export const getWorkouts = async (req,res)=>{
-    const workouts = await Workout.find({}).sort({createdAt: -1})
+    const user_id = req.user._id
+
+    const workouts = await Workout.find({user_id}).sort({createdAt: -1})
     res.status(200).json(workouts)
 }
 //get a single workout
@@ -21,7 +24,7 @@ export const getWorkout = async(req,res)=>{
 }
 //create a new workout
 export const createWorkout = async(req,res)=>{
-    const {title,reps,load} = req.body
+    const {title,reps,load,user_id} = req.body
     let emptyFields=[]
     if(!title){
         emptyFields.push('title')
@@ -35,8 +38,8 @@ export const createWorkout = async(req,res)=>{
     if(emptyFields.length>0){
         return res.status(400).json({error:"Enter vaild details in all fields",emptyFields})
     }
-    try{ 
-        const workout =await Workout.create({title,reps,load})
+    try{
+        const workout =await Workout.create({title,reps,load,user_id: req.user._id})
         res.status(200).json(workout)
     }catch(error){
         res.status(400).json({error:error.message})
@@ -58,16 +61,19 @@ export const deleteWorkout = async(req,res)=>{
 }
 //update a new workout
 
-export const updateWorkout = async (req,res)=>{
-    const {id} = req.params
-    if(!mongoose.Types.ObjectId.isValid(id)){
-        return res.status(404).json({error: "No such workout"})
-    }
-    const workout = await Workout.findOneAndUpdate({_id:id},{
-        ...req.body
-    })
-    if(!workout){
-        return res.status(400).json({error: "No such workout"})
-    }
-    res.status(200).json(workout)
-}
+
+
+// Update a workout by ID
+export const updateWorkout = async (req, res, next) => {
+    const Workout = require("../models/WorkoutModel");
+  try {
+    const updatedWorkout = await Workout.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    res.json(updatedWorkout);
+  } catch (error) {
+    next(error);
+  }
+};
